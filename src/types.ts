@@ -1,4 +1,4 @@
-export type Role = "admin" | "student";
+export type Role = "admin" | "student" | "principal" | "hod" | "teacher";
 export type AttendanceStatus = "present" | "absent" | "late" | "excused";
 export type SportsLevel = "district" | "state" | "national";
 
@@ -7,6 +7,8 @@ export interface User {
   email: string;
   role: Role;
   student_id: number | null;
+  department_id: number | null;
+  teacher_id: number | null;
   created_at: string;
 }
 
@@ -30,6 +32,25 @@ export interface Course {
   title: string;
   description: string | null;
   course_fee: number | string | null;
+  department_id: number | null;
+}
+
+export interface Department {
+  id: number;
+  name: string;
+}
+
+export interface Teacher {
+  id: number;
+  name: string;
+  email: string;
+  department_id: number;
+}
+
+export interface TeacherCourse {
+  id: number;
+  teacher_id: number;
+  course_id: number;
 }
 
 export interface Enrollment {
@@ -91,6 +112,7 @@ export interface FeePayment {
   amount: number | string;
   payment_date: string;
   payment_method: PaymentMethod;
+  idempotency_key: string | null;
 }
 
 export interface FeeAssignment {
@@ -168,6 +190,35 @@ export interface StudentDashboard {
   average_percentage: number | null;
 }
 
+export interface PrincipalDashboard {
+  total_students: number;
+  total_courses: number;
+  total_attendance: number;
+  total_marks: number;
+  total_results: number;
+}
+
+export interface HODDashboard {
+  department_id: number;
+  department_name: string;
+  total_students: number;
+  total_courses: number;
+  total_teachers: number;
+  total_enrollments: number;
+  total_attendance: number;
+  total_marks: number;
+  total_results: number;
+}
+
+export interface TeacherDashboard {
+  total_courses: number;
+  total_students: number;
+  total_enrollments: number;
+  total_attendance: number;
+  total_marks: number;
+  total_results: number;
+}
+
 export type Entity =
   | Student
   | Course
@@ -178,4 +229,7 @@ export type Entity =
   | FeeAssignment
   | TimetableEntry
   | SportsAchievement
-  | CourseResult;
+  | CourseResult
+  | Department
+  | Teacher
+  | TeacherCourse;

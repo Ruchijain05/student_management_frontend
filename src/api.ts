@@ -25,24 +25,35 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
   const token = tokenStore.get();
   if (token) headers.set("Authorization", `Bearer ${token}`);
 
-  const response = await fetch(`${API_ROOT}${path}`, { ...options, headers });
+  let response: Response;
+  try {
+    response = await fetch(`${API_ROOT}${path}`, { ...options, headers });
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    throw new ApiError(`Unable to reach the API for ${path}: ${reason}`, 0);
+  }
   if (!response.ok) {
-    let message = `Request failed (${response.status})`;
-    try {
-      const body: unknown = await response.json();
-      if (typeof body === "object" && body !== null && "detail" in body) {
-        const detail = (body as { detail: unknown }).detail;
-        message = typeof detail === "string" ? detail : JSON.stringify(detail);
-      } else if (
-        typeof body === "object" &&
-        body !== null &&
-        "message" in body &&
-        typeof (body as { message: unknown }).message === "string"
-      ) {
-        message = (body as { message: string }).message;
+    const responseText = await response.text();
+    let message = `API request to ${path} failed (${response.status})`;
+    if (responseText.trim()) {
+      try {
+        const body: unknown = JSON.parse(responseText);
+        if (typeof body === "object" && body !== null && "detail" in body) {
+          const detail = (body as { detail: unknown }).detail;
+          message = typeof detail === "string" ? detail : JSON.stringify(detail);
+        } else if (
+          typeof body === "object" &&
+          body !== null &&
+          "message" in body &&
+          typeof (body as { message: unknown }).message === "string"
+        ) {
+          message = (body as { message: string }).message;
+        } else {
+          message = responseText.trim().slice(0, 1000);
+        }
+      } catch {
+        message = responseText.trim().slice(0, 1000);
       }
-    } catch {
-      // Keep the HTTP status message when the response is not JSON.
     }
     throw new ApiError(message, response.status);
   }
